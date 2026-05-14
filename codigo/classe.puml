@@ -1,0 +1,61 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+enum TipoMedalha {
+  OURO
+  PRATA
+  BRONZE
+  NENHUMA
+}
+
+class Pais {
+  - id: Long
+  - nome: String
+  - codigoISO: String
+  + consultarQuadroDeMedalhas(): Map
+}
+
+class Atleta {
+  - id: Long
+  - nome: String
+  - passaporte: String
+  - dataNascimento: Date
+  + verificarElegibilidade(): boolean
+}
+
+class Local {
+  - id: Long
+  - nome: String
+  - capacidade: int
+  - endereco: String
+  + isDisponivel(dataHora: LocalDateTime): boolean
+}
+
+class Competicao {
+  - id: Long
+  - modalidade: String
+  - dataHoraInicio: LocalDateTime
+  - status: String
+  + registrarResultado(): void
+}
+
+class Inscricao {
+  - idInscricao: Long
+  - dataRegistro: LocalDateTime
+  - numeroPeito: String
+  + validarRegraPaisUnico(): boolean
+}
+
+class Resultado {
+  - id: Long
+  - pontuacaoOuTempo: String
+  - posicaoFinal: int
+}
+
+Pais "1" <-- "1..*" Atleta : representa
+Atleta "1" -- "*" Inscricao : realiza >
+Competicao "1" -- "*" Inscricao : possui <
+Competicao "*" --> "1" Local : ocorre em >
+Inscricao "1" --> "0..1" Resultado : obtém >
+Resultado --> "1" TipoMedalha : confere >
+@enduml
