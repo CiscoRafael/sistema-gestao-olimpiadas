@@ -1,0 +1,74 @@
+@startuml
+' Força a interpretação como Diagrama de Implantação
+skinparam componentStyle uml2
+
+skinparam node {
+    BackgroundColor<<AWS>> #FF9900
+    BackgroundColor<<Subnet>> #FFFFFF
+    BorderColor #232F3E
+}
+
+node "Rede Externa (Internet)" {
+    node "Dispositivo do Usuário" <<Client>> {
+        artifact "Navegador Web (React)" as WebApp
+        artifact "Mobile App (Flutter)" as MobileApp
+    }
+}
+
+cloud "Amazon Web Services (AWS)" <<AWS>> {
+
+    node "Amazon CloudFront (CDN)" as CDN {
+        artifact "Frontend Assets (S3 Bucket Website)"
+    }
+
+    node "Virtual Private Cloud (VPC)" <<Subnet>> {
+        
+        node "Public Subnet" <<Subnet>> {
+            node "Application Load Balancer (ALB)" <<Infrastructure>> as ALB {
+                [AWS WAF / ALB]
+            }
+        }
+
+        node "Private Subnet" <<Subnet>> {
+            node "Amazon EKS Cluster (Kubernetes)" as EKS {
+                node "Worker Node 01" <<EC2 Instance>> {
+                    artifact "SGO_Backend_Pod_A" <<Spring Boot>> as PodA
+                }
+                node "Worker Node 02" <<EC2 Instance>> {
+                    artifact "SGO_Backend_Pod_B" <<Spring Boot>> as PodB
+                }
+            }
+
+            node "Amazon ElastiCache" <<Managed Service>> as Cache {
+                database "Redis Cluster"
+            }
+
+            node "Amazon RDS" <<Managed Service>> as RDS {
+                database "Multi-AZ MySQL" {
+                    [sgo_database]
+                }
+            }
+        }
+
+        node "Amazon S3 (Simple Storage Service)" <<Storage>> as S3 {
+            [Bucket: sgo-relatorios-pdf]
+        }
+    }
+}
+
+' Conexões com sintaxe simplificada para evitar erros de parser
+WebApp --> CDN : "HTTPS (443)"
+MobileApp --> ALB : "HTTPS (443)"
+CDN --> ALB : "Origin Access"
+
+ALB --> PodA : "HTTP (8080)"
+ALB --> PodB : "HTTP (8080)"
+
+PodA --> Cache : "Port 6379"
+PodB --> Cache : "Port 6379"
+
+PodA --> RDS : "JDBC/TLS (3306)"
+PodB --> RDS : "JDBC/TLS (3306)"
+
+PodA --> S3 : "AWS SDK (HTTPS) - Upload"
+@enduml
