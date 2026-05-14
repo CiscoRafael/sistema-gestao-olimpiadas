@@ -1,0 +1,71 @@
+@startuml
+skinparam packageStyle frame
+skinparam linetype ortho
+
+package "br.com.sgo" {
+
+    package "api (Web/Interface)" {
+        package "controllers" {
+            [CompeticaoController]
+            [AtletaController]
+            [ResultadoController]
+        }
+        package "dtos" {
+            [InscricaoRequestDTO]
+            [ClassificacaoResponseDTO] 
+            note right: Deve conter o ID explícito [cite: 40]
+        }
+    }
+
+    package "business (Application/Services)" {
+        package "services" {
+            [InscricaoService]
+            [AlocacaoService]
+            [RankingService]
+        }
+        package "strategies" {
+            note top: **Pattern: Strategy**\nDefine diferentes lógicas de\nrankeamento por modalidade.
+            interface "IRankingStrategy"
+            [PontuacaoAcumuladaStrategy]
+            [MelhorTempoStrategy]
+        }
+        package "factories" {
+            note top: **Pattern: Factory**\nInstancia competições com\nregras específicas.
+            [CompeticaoFactory]
+        }
+    }
+
+    package "domain (Core/Entities)" {
+        package "models" {
+            [Atleta]
+            [Competicao]
+            [Local]
+            [Pais]
+            [Resultado]
+        }
+        package "value_objects" {
+            [Medalha]
+            [HorarioEvento]
+        }
+    }
+
+    package "infrastructure (Data/Persistence)" {
+        package "repositories" {
+            note bottom: **Pattern: Repository**\nAbstrai o acesso ao MySQL[cite: 40].
+            interface "IAtletaRepository"
+            interface "ICompeticaoRepository"
+            [MySQLRepositoryImpl]
+        }
+    }
+}
+
+' Relacionamentos entre camadas
+"api" ..> "dtos"
+"api" ..> "services" : Chama casos de uso
+"services" ..> "domain" : Manipula entidades
+"services" ..> "factories"
+"services" ..> "strategies"
+"services" ..> "repositories" : Persiste dados
+"repositories" ..> "domain" : Mapeia entidades
+
+@enduml
