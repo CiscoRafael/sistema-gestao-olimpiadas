@@ -1,0 +1,71 @@
+@startuml
+skinparam componentStyle uml2
+
+package "Camada de Cliente (Frontend)" {
+    [Web Admin Dashboard] <<React/Vite>> as Web
+    [App Mobile Delegados] <<Flutter/Expo>> as Mobile
+}
+
+package "API Gateway / Segurança" {
+    [API Gateway] as Gateway
+    interface "Auth Interface" as IAuth
+    [Security Provider] <<OAuth2/JWT>> as Auth
+}
+
+package "Core Business Logic" {
+    
+    component "Módulo de Inscrições" as MI {
+        interface "Inscrição API" as IInsc
+        [Inscrição Engine]
+    }
+
+    component "Módulo de Alocação" as MA {
+        interface "Alocação API" as IAloc
+        [Validador de Conflitos]
+    }
+
+    component "Módulo de Resultados" as MR {
+        interface "Resultados API" as IRes
+        [Processador de Ranking]
+    }
+
+    component "Módulo de Relatórios" as MRel {
+        [Gerador de PDF/Excel]
+    }
+}
+
+package "Serviços de Infraestrutura" {
+    [Serviço de Notificação] as Notif
+    interface "SMTP/Push" as ISend
+    database "MySQL (Relacional)" as DB
+    [Cache Provider] <<Redis>> as Cache
+}
+
+' Relacionamentos e Interfaces
+Web --> Gateway : REST/JSON
+Mobile --> Gateway : REST/JSON
+
+Gateway --( IAuth
+Auth - IAuth
+
+Gateway --( IInsc
+Gateway --( IAloc
+Gateway --( IRes
+
+MI - IInsc
+MA - IAloc
+MR - IRes
+
+' Comunicação entre componentes
+MI ..> Notif : <<use>>
+MR ..> MRel : <<trigger>>
+MA ..> Cache : <<check availability>>
+
+' Persistência
+MI --> DB : CRUD Atletas/Países
+MA --> DB : CRUD Locais/Horários
+MR --> DB : Registro de Medalhas
+
+Notif - ISend
+
+@enduml
